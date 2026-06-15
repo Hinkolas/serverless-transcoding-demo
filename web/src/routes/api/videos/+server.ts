@@ -28,60 +28,66 @@ export const GET: RequestHandler = async () => {
 };
 
 export const POST: RequestHandler = async ({ request }) => {
-	const body = (await request.json()) as {
-		fileName?: string;
-		mimeType?: string;
-		sizeBytes?: number;
-		title?: string;
-	};
+	try {
+		const body = (await request.json()) as {
+			fileName?: string;
+			mimeType?: string;
+			sizeBytes?: number;
+			title?: string;
+		};
 
-	if (!body.fileName || !body.mimeType || !body.sizeBytes) {
-		return json({ message: 'fileName, mimeType, and sizeBytes are required' }, { status: 400 });
-	}
+		if (!body.fileName || !body.mimeType || !body.sizeBytes) {
+			return json({ message: 'fileName, mimeType, and sizeBytes are required' }, { status: 400 });
+		}
 
-	if (!body.mimeType.startsWith('video/')) {
-		return json({ message: 'Only video uploads are supported' }, { status: 400 });
-	}
+		if (!body.mimeType.startsWith('video/')) {
+			return json({ message: 'Only video uploads are supported' }, { status: 400 });
+		}
 
-	const id = crypto.randomUUID();
-	const fileName = safeObjectName(body.fileName) || 'source-video';
-	const title = body.title?.trim() || body.fileName;
-	const sourceKey = `uploads/${id}/${fileName}`;
-	const outputPrefix = `outputs/${id}`;
-	const uploadUrl = await createPresignedUploadUrl(sourceKey, body.mimeType);
+		const id = crypto.randomUUID();
+		const fileName = safeObjectName(body.fileName) || 'source-video';
+		const title = body.title?.trim() || body.fileName;
+		const sourceKey = `uploads/${id}/${fileName}`;
+		const outputPrefix = `outputs/${id}`;
+		const uploadUrl = await createPresignedUploadUrl(sourceKey, body.mimeType);
 
-	await db.insert(videos).values({
-		id,
-		title,
-		originalFileName: body.fileName,
-		mimeType: body.mimeType,
-		sizeBytes: body.sizeBytes,
-		sourceKey,
-		outputPrefix,
-		status: 'uploading'
-	});
+		await db.insert(videos).values({
+			id,
+			title,
+			originalFileName: body.fileName,
+			mimeType: body.mimeType,
+			sizeBytes: body.sizeBytes,
+			sourceKey,
+			outputPrefix,
+			status: 'uploading'
+		});
 
-	await db.insert(videoRenditions).values(
-		transcodePresets.map((preset) => ({
+		await db.insert(videoRenditions).values(
+			transcodePresets.map((preset) => ({
+				videoId: id,
+				label: preset.label,
+				height: preset.height,
+				videoBitrate: preset.videoBitrate,
+				audioBitrate: preset.audioBitrate,
+				status: 'planned' as const
+			}))
+		);
+
+		await db.insert(jobEvents).values({
 			videoId: id,
-			label: preset.label,
-			height: preset.height,
-			videoBitrate: preset.videoBitrate,
-			audioBitrate: preset.audioBitrate,
-			status: 'planned' as const
-		}))
-	);
+			type: 'upload_url_created',
+			payload: JSON.stringify({ sourceKey, outputPrefix })
+		});
 
-	await db.insert(jobEvents).values({
-		videoId: id,
-		type: 'upload_url_created',
-		payload: JSON.stringify({ sourceKey, outputPrefix })
-	});
+		const [video] = await db.select().from(videos).where(eq(videos.id, id)).limit(1);
 
-	const [video] = await db.select().from(videos).where(eq(videos.id, id)).limit(1);
-
-	return json({
-		video,
-		uploadUrl
-	});
+		return json({
+			video,
+			uploadUrl
+		});
+	} catch (error) {
+		const message = error instanceof Error ? error.message : 'Failed to create upload';
+		console.error('Failed to create video upload', error);
+		return json({ message }, { status: 500 });
+	}
 };

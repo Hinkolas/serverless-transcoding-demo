@@ -48,3 +48,41 @@ ghcr.io/hinkolas/serverless-transcoding-demo-web:v0.1.0
 ```
 
 Runtime environment variables are the same as `web/.env.example`.
+
+## Coolify Web Deployment
+
+Use the root `docker-compose.yml` to deploy the web app through Coolify. It runs:
+
+```text
+ghcr.io/hinkolas/serverless-transcoding-demo-web:${APP_VERSION:-v0.1.0}
+```
+
+The Compose file mounts a persistent named volume at `/data` and sets:
+
+```text
+DATABASE_URL=/data/local.db
+```
+
+Configure these variables in Coolify:
+
+```text
+APP_VERSION=v0.1.0
+S3_ENDPOINT=https://fsn1.your-objectstorage.com
+S3_REGION=fsn1
+S3_BUCKET=...
+S3_ACCESS_KEY_ID=...
+S3_SECRET_ACCESS_KEY=...
+RUNPOD_MODE=real
+RUNPOD_API_KEY=...
+RUNPOD_ENDPOINT_ID=...
+APP_BASE_URL=https://your-domain.example
+WEBHOOK_SECRET=...
+```
+
+Optional:
+
+```text
+SIGNED_URL_TTL_SECONDS=300
+RUNPOD_EXECUTION_TIMEOUT_MS=7200000
+RUNPOD_TTL_MS=86400000
+```
