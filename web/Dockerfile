@@ -1,4 +1,4 @@
-FROM oven/bun:1.3.11-debian AS deps
+FROM oven/bun:1-debian AS deps
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ ENV DATABASE_URL=/tmp/build.db
 COPY . .
 RUN bun run build
 
-FROM oven/bun:1.3.11-debian AS runtime
+FROM oven/bun:1-debian AS runtime
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
