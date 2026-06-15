@@ -51,22 +51,22 @@ Runtime environment variables are the same as `web/.env.example`.
 
 ## Coolify Web Deployment
 
-Use the root `docker-compose.yml` to deploy the web app through Coolify. It runs:
+Use the root `docker-compose.yml` to deploy the web app through Coolify. The Compose file builds
+the web container from the checked-out repository commit, so a Coolify redeploy of `main` runs the
+current web code instead of a previously published GHCR tag.
+
+The Compose file runs a Postgres service with a persistent `postgres_data` volume and sets:
 
 ```text
-ghcr.io/hinkolas/serverless-transcoding-demo-web:${APP_VERSION:-v0.1.0}
-```
-
-The Compose file mounts a persistent named volume at `/data` and sets:
-
-```text
-DATABASE_URL=/data/local.db
+DATABASE_URL=postgres://postgres:postgres@postgres:5432/video_transcoding
 ```
 
 Configure these variables in Coolify:
 
 ```text
-APP_VERSION=v0.1.0
+POSTGRES_DB=video_transcoding
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=...
 S3_ENDPOINT=https://fsn1.your-objectstorage.com
 S3_REGION=fsn1
 S3_BUCKET=...

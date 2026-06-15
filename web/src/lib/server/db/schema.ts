@@ -1,13 +1,13 @@
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { bigint, doublePrecision, pgTable, text } from 'drizzle-orm/pg-core';
 
-export const videos = sqliteTable('videos', {
+export const videos = pgTable('videos', {
 	id: text('id')
 		.primaryKey()
 		.$defaultFn(() => crypto.randomUUID()),
 	title: text('title').notNull(),
 	originalFileName: text('original_file_name').notNull(),
 	mimeType: text('mime_type').notNull(),
-	sizeBytes: integer('size_bytes').notNull(),
+	sizeBytes: bigint('size_bytes', { mode: 'number' }).notNull(),
 	sourceKey: text('source_key').notNull(),
 	outputPrefix: text('output_prefix').notNull(),
 	masterPlaylistKey: text('master_playlist_key'),
@@ -18,14 +18,14 @@ export const videos = sqliteTable('videos', {
 		.notNull()
 		.default('uploading'),
 	errorMessage: text('error_message'),
-	sourceWidth: integer('source_width'),
-	sourceHeight: integer('source_height'),
-	durationSeconds: real('duration_seconds'),
-	createdAt: integer('created_at').notNull().$defaultFn(Date.now),
-	updatedAt: integer('updated_at').notNull().$defaultFn(Date.now)
+	sourceWidth: bigint('source_width', { mode: 'number' }),
+	sourceHeight: bigint('source_height', { mode: 'number' }),
+	durationSeconds: doublePrecision('duration_seconds'),
+	createdAt: bigint('created_at', { mode: 'number' }).notNull().$defaultFn(Date.now),
+	updatedAt: bigint('updated_at', { mode: 'number' }).notNull().$defaultFn(Date.now)
 });
 
-export const videoRenditions = sqliteTable('video_renditions', {
+export const videoRenditions = pgTable('video_renditions', {
 	id: text('id')
 		.primaryKey()
 		.$defaultFn(() => crypto.randomUUID()),
@@ -33,8 +33,8 @@ export const videoRenditions = sqliteTable('video_renditions', {
 		.notNull()
 		.references(() => videos.id, { onDelete: 'cascade' }),
 	label: text('label').notNull(),
-	width: integer('width'),
-	height: integer('height').notNull(),
+	width: bigint('width', { mode: 'number' }),
+	height: bigint('height', { mode: 'number' }).notNull(),
 	videoBitrate: text('video_bitrate').notNull(),
 	audioBitrate: text('audio_bitrate').notNull(),
 	playlistKey: text('playlist_key'),
@@ -44,11 +44,11 @@ export const videoRenditions = sqliteTable('video_renditions', {
 	})
 		.notNull()
 		.default('planned'),
-	createdAt: integer('created_at').notNull().$defaultFn(Date.now),
-	updatedAt: integer('updated_at').notNull().$defaultFn(Date.now)
+	createdAt: bigint('created_at', { mode: 'number' }).notNull().$defaultFn(Date.now),
+	updatedAt: bigint('updated_at', { mode: 'number' }).notNull().$defaultFn(Date.now)
 });
 
-export const jobEvents = sqliteTable('job_events', {
+export const jobEvents = pgTable('job_events', {
 	id: text('id')
 		.primaryKey()
 		.$defaultFn(() => crypto.randomUUID()),
@@ -56,7 +56,7 @@ export const jobEvents = sqliteTable('job_events', {
 	type: text('type').notNull(),
 	runpodJobId: text('runpod_job_id'),
 	payload: text('payload').notNull(),
-	createdAt: integer('created_at').notNull().$defaultFn(Date.now)
+	createdAt: bigint('created_at', { mode: 'number' }).notNull().$defaultFn(Date.now)
 });
 
 export type VideoStatus = typeof videos.$inferSelect.status;

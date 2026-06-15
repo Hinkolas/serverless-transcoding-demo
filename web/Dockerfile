@@ -2,16 +2,12 @@ FROM node:22-bookworm-slim AS deps
 
 WORKDIR /app
 
-RUN apt-get update \
-	&& apt-get install -y --no-install-recommends python3 make g++ \
-	&& rm -rf /var/lib/apt/lists/*
-
 COPY package.json ./
 RUN npm install
 
 FROM deps AS build
 
-ENV DATABASE_URL=/tmp/build.db
+ENV DATABASE_URL=postgres://postgres:postgres@localhost:5432/video_transcoding
 
 COPY . .
 RUN npm run build
@@ -23,10 +19,6 @@ ENV HOST=0.0.0.0
 ENV PORT=3000
 
 WORKDIR /app
-
-RUN apt-get update \
-	&& apt-get install -y --no-install-recommends python3 make g++ \
-	&& rm -rf /var/lib/apt/lists/*
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/build ./build
